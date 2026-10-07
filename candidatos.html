@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Candidatos | Cidade Alta RP</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial;background:#f3f4f6;color:#111}
+header{background:#111;color:#fff;padding:18px}
+header h1{margin:0;font-size:23px}
+header p{margin:5px 0 0;color:#aaa}
+main{max-width:950px;margin:auto;padding:18px}
+.card{background:#fff;padding:18px;border-radius:14px;margin-bottom:18px;box-shadow:0 4px 15px #0001}
+label{display:block;font-size:13px;font-weight:bold;margin:10px 0 5px}
+input,select{width:100%;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:15px}
+button{border:0;border-radius:8px;padding:10px 14px;font-weight:bold;cursor:pointer}
+.salvar{width:100%;margin-top:15px;background:#111;color:#fff}
+.cancelar{width:100%;margin-top:7px}
+.lista{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.candidato{display:flex;gap:12px;border:1px solid #ddd;border-radius:10px;padding:12px}
+.foto,.semfoto{width:75px;height:75px;border-radius:9px;object-fit:cover;background:#eee;flex-shrink:0}
+.semfoto{display:flex;align-items:center;justify-content:center;font-size:10px;color:#777}
+.info{flex:1}
+.nome{font-weight:bold;font-size:16px}
+.partido,.cargo{color:#666;font-size:13px;margin-top:3px}
+.numero{font-weight:bold;margin-top:5px}
+.acoes{display:flex;gap:5px;margin-top:8px}
+.editar{background:#eee}
+.excluir{background:#c62828;color:#fff}
+.preview{display:none;margin-top:10px}
+.preview img{width:90px;height:90px;object-fit:cover;border-radius:9px}
+.msg{display:none;padding:10px;margin-top:10px;border-radius:8px;font-size:13px}
+.ok{background:#e5f6eb;color:#16843c}
+.erro{background:#fdeaea;color:#c62828}
+.preset-info{
+background:#f3f4f6;
+padding:11px;
+border-radius:8px;
+font-size:13px;
+color:#555;
+margin-top:10px;
+}
+.preset-btn{
+width:100%;
+margin-top:10px;
+background:#2563eb;
+color:#fff;
+}
+@media(max-width:650px){
+.lista{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>CIDADE ALTA RP</h1>
+<p>Gerenciamento de candidatos</p>
+</header>
+
+<main>
+
+<div class="card">
+
+<h2>Preset da eleição</h2>
+
+<label>SELECIONE O PRESET</label>
+
+<select id="preset" onchange="mudarPreset()">
+<option value="presidente">Preset 1 • Presidente</option>
+<option value="outros">Preset 2 • Outros cargos</option>
+</select>
+
+<div class="preset-info" id="presetInfo"></div>
+
+<button
+class="preset-btn"
+onclick="salvarPreset()"
+>
+SALVAR PRESET
+</button>
+
+</div>
+
+<div class="card">
+
+<h2 id="titulo">Cadastrar candidato</h2>
+
+<label>Cargo</label>
+
+<select id="cargo" onchange="limite()">
+
+<option value="federal">
+Deputado Federal
+</option>
+
+<option value="estadual">
+Deputado Estadual
+</option>
+
+<option value="senador1">
+1º Senador
+</option>
+
+<option value="senador2">
+2º Senador
+</option>
+
+<option value="governador">
+Governador
+</option>
+
+<option value="presidente">
+Presidente
+</option>
+
+</select>
+
+<label>Número</label>
+
+<input
+id="numero"
+inputmode="numeric"
+placeholder="Número"
+>
+
+<label>Nome</label>
+
+<input
+id="nome"
+placeholder="Nome do candidato"
+>
+
+<label>Partido</label>
+
+<input
+id="partido"
+placeholder="Ex.: PSD"
+>
+
+<label>Foto</label>
+
+<input
+id="foto"
+type="file"
+accept="image/*"
+onchange="imagem(event)"
+>
+
+<div class="preview" id="preview">
+<img id="imgPreview">
+</div>
+
+<button
+class="salvar"
+onclick="salvar()"
+>
+CADASTRAR CANDIDATO
+</button>
+
+<button
+class="cancelar"
+id="cancelar"
+onclick="limpar()"
+style="display:none"
+>
+CANCELAR
+</button>
+
+<div class="msg ok" id="ok"></div>
+<div class="msg erro" id="erro"></div>
+
+</div>
+
+<div class="card">
+
+<h2>Candidatos cadastrados</h2>
+
+<div class="lista" id="lista"></div>
+
+</div>
+
+</main>
+
+<script>
+
+const KEY="candidatosCidadeAlta";
+const PRESET_KEY="cidadeAltaPreset";
+
+let c=
+JSON.parse(
+localStorage.getItem(KEY)||"{}"
+);
+
+let edit=null;
+let foto="";
+
+
+const cargos={
+
+federal:[
+"Deputado Federal",
+4
+],
+
+estadual:[
+"Deputado Estadual",
+5
+],
+
+senador1:[
+"1º Senador",
+3
+],
+
+senador2:[
+"2º Senador",
+3
+],
+
+governador:[
+"Governador",
+2
+],
+
+presidente:[
+"Presidente",
+2
+]
+
+};
+
+
+function presetAtual(){
+
+let p=
+localStorage.getItem(
+PRESET_KEY
+);
+
+if(
+p!=="presidente" &&
+p!=="outros"
+){
+
+p="outros";
+
+localStorage.setItem(
+PRESET_KEY,
+p
+);
+
+}
+
+return p;
+
+}
+
+
+function mudarPreset(){
+
+let p=
+document.getElementById(
+"preset"
+).value;
+
+atualizarTextoPreset();
+
+atualizarCargos();
+
+render();
+
+limpar();
+
+}
+
+
+function salvarPreset(){
+
+let p=
+document.getElementById(
+"preset"
+).value;
+
+localStorage.setItem(
+PRESET_KEY,
+p
+);
+
+atualizarTextoPreset();
+atualizarCargos();
+render();
+limpar();
+
+alert(
+p==="presidente"
+?
+"Preset 1 salvo. Agora o sistema está configurado para Presidente."
+:
+"Preset 2 salvo. Agora o sistema está configurado para os outros cargos."
+);
+
+}
+
+
+function atualizarTextoPreset(){
+
+let p=
+document.getElementById(
+"preset"
+).value;
+
+let texto=
+document.getElementById(
+"presetInfo"
+);
+
+if(p==="presidente"){
+
+texto.textContent=
+"Preset 1 ativo: somente Presidente.";
+
+}else{
+
+texto.textContent=
+"Preset 2 ativo: Deputado Federal, Deputado Estadual, 1º Senador, 2º Senador e Governador.";
+
+}
+
+}
+
+
+function atualizarCargos(){
+
+let p=
+document.getElementById(
+"preset"
+).value;
+
+let select=
+document.getElementById(
+"cargo"
+);
+
+let atual=
+select.value;
+
+select.innerHTML="";
+
+
+let permitidos=
+p==="presidente"
+?
+["presidente"]
+:
+[
+"federal",
+"estadual",
+"senador1",
+"senador2",
+"governador"
+];
+
+
+permitidos.forEach(k=>{
+
+let option=
+document.createElement("option");
+
+option.value=k;
+option.textContent=
+cargos[k][0];
+
+select.appendChild(option);
+
+});
+
+
+if(
+permitidos.includes(atual)
+){
+
+select.value=atual;
+
+}else{
+
+select.value=
+permitidos[0];
+
+}
+
+limite();
+
+}
+
+
+function limite(){
+
+let n=
+cargos[
+document.getElementById("cargo").value
+][1];
+
+document.getElementById(
+"numero"
+).maxLength=n;
+
+document.getElementById(
+"numero"
+).placeholder=
+"Número com "+n+" dígitos";
+
+}
+
+
+function imagem(e){
+
+let f=e.target.files[0];
+
+if(!f)return;
+
+let r=
+new FileReader();
+
+r.onload=()=>{
+
+foto=r.result;
+
+document.getElementById(
+"imgPreview"
+).src=foto;
+
+document.getElementById(
+"preview"
+).style.display=
+"block";
+
+};
+
+r.readAsDataURL(f);
+
+}
+
+
+function salvar(){
+
+let ca=
+document.getElementById(
+"cargo"
+).value;
+
+let n=
+document.getElementById(
+"numero"
+).value
+.replace(/\D/g,"");
+
+let no=
+document.getElementById(
+"nome"
+).value
+.trim();
+
+let p=
+document.getElementById(
+"partido"
+).value
+.trim();
+
+let q=
+cargos[ca][1];
+
+
+document.getElementById(
+"erro"
+).style.display="none";
+
+document.getElementById(
+"ok"
+).style.display="none";
+
+
+let ativo=
+presetAtual();
+
+if(
+ativo==="presidente" &&
+ca!=="presidente"
+){
+
+return msg(
+"erro",
+"Esse cargo não pertence ao Preset 1."
+);
+
+}
+
+
+if(
+ativo==="outros" &&
+ca==="presidente"
+){
+
+return msg(
+"erro",
+"Presidente não pertence ao Preset 2."
+);
+
+}
+
+
+if(n.length!=q)
+return msg(
+"erro",
+"Número precisa ter "+q+" dígitos."
+);
+
+
+if(!no)
+return msg(
+"erro",
+"Digite o nome."
+);
+
+
+if(!p)
+return msg(
+"erro",
+"Digite o partido."
+);
+
+
+if(
+Object.values(c).some(
+x=>
+x.cargo==ca &&
+x.numero==n &&
+x.id!=edit
+)
+){
+
+return msg(
+"erro",
+"Esse número já está cadastrado nesse cargo."
+);
+
+}
+
+
+if(
+(ca=="senador1"||ca=="senador2") &&
+Object.values(c).some(
+x=>
+x.cargo==
+(
+ca=="senador1"
+?
+"senador2"
+:
+"senador1"
+) &&
+x.numero==n &&
+x.id!=edit
+)
+){
+
+return msg(
+"erro",
+"Esse número já está no outro cargo de senador."
+);
+
+}
+
+
+let id=
+edit||
+Date.now().toString();
+
+
+c[id]={
+id,
+cargo:ca,
+numero:n,
+nome:no,
+partido:p,
+foto:
+foto||
+(
+edit
+?
+c[edit].foto
+:
+""
+)
+};
+
+
+localStorage.setItem(
+KEY,
+JSON.stringify(c)
+);
+
+
+msg(
+"ok",
+edit
+?
+"Candidato atualizado."
+:
+"Candidato cadastrado."
+);
+
+
+limpar();
+render();
+
+}
+
+
+function editar(id){
+
+let x=c[id];
+
+if(!x)return;
+
+
+let p=
+presetAtual();
+
+
+if(
+p==="presidente" &&
+x.cargo!=="presidente"
+){
+
+alert(
+"Esse candidato pertence ao outro preset."
+);
+
+return;
+
+}
+
+
+if(
+p==="outros" &&
+x.cargo==="presidente"
+){
+
+alert(
+"Esse candidato pertence ao outro preset."
+);
+
+return;
+
+}
+
+
+edit=id;
+
+document.getElementById(
+"cargo"
+).value=x.cargo;
+
+document.getElementById(
+"numero"
+).value=x.numero;
+
+document.getElementById(
+"nome"
+).value=x.nome;
+
+document.getElementById(
+"partido"
+).value=x.partido;
+
+foto=x.foto||"";
+
+
+if(foto){
+
+document.getElementById(
+"imgPreview"
+).src=foto;
+
+document.getElementById(
+"preview"
+).style.display=
+"block";
+
+}
+
+
+document.getElementById(
+"titulo"
+).textContent=
+"Editar candidato";
+
+document.getElementById(
+"cancelar"
+).style.display=
+"block";
+
+document.querySelector(
+".salvar"
+).textContent=
+"SALVAR ALTERAÇÕES";
+
+scrollTo(0,0);
+
+}
+
+
+function excluir(id){
+
+if(
+confirm(
+"Excluir este candidato?"
+)
+){
+
+delete c[id];
+
+localStorage.setItem(
+KEY,
+JSON.stringify(c)
+);
+
+render();
+
+}
+
+}
+
+
+function limpar(){
+
+edit=null;
+foto="";
+
+
+let p=
+presetAtual();
+
+
+document.getElementById(
+"cargo"
+).value=
+p==="presidente"
+?
+"presidente"
+:
+"federal";
+
+
+document.getElementById(
+"numero"
+).value="";
+
+document.getElementById(
+"nome"
+).value="";
+
+document.getElementById(
+"partido"
+).value="";
+
+
+document.getElementById(
+"foto"
+).value="";
+
+
+document.getElementById(
+"preview"
+).style.display=
+"none";
+
+
+document.getElementById(
+"titulo"
+).textContent=
+"Cadastrar candidato";
+
+
+document.getElementById(
+"cancelar"
+).style.display=
+"none";
+
+
+document.querySelector(
+".salvar"
+).textContent=
+"CADASTRAR CANDIDATO";
+
+
+limite();
+
+}
+
+
+function msg(tipo,t){
+
+let e=
+document.getElementById(tipo);
+
+e.textContent=t;
+
+e.style.display="block";
+
+setTimeout(
+()=>{
+e.style.display="none"
+},
+3000
+);
+
+}
+
+
+function render(){
+
+let lista=
+document.getElementById(
+"lista"
+);
+
+lista.innerHTML="";
+
+
+let p=
+presetAtual();
+
+
+let permitidos=
+p==="presidente"
+?
+["presidente"]
+:
+[
+"federal",
+"estadual",
+"senador1",
+"senador2",
+"governador"
+];
+
+
+let ordem=[
+"federal",
+"estadual",
+"senador1",
+"senador2",
+"governador",
+"presidente"
+];
+
+
+let candidatos=
+Object.values(c)
+
+.filter(
+x=>
+permitidos.includes(x.cargo)
+);
+
+
+candidatos
+.sort(
+(a,b)=>
+ordem.indexOf(a.cargo)-
+ordem.indexOf(b.cargo)||
++a.numero-
++b.numero
+)
+.forEach(x=>{
+
+let d=
+document.createElement("div");
+
+d.className="candidato";
+
+
+d.innerHTML=
+x.foto
+?
+`<img class="foto" src="${x.foto}">`
+:
+`<div class="semfoto">SEM FOTO</div>`;
+
+
+let i=
+document.createElement("div");
+
+i.className="info";
+
+
+i.innerHTML=
+`
+<div class="nome"></div>
+<div class="partido"></div>
+<div class="numero">
+Número: ${x.numero}
+</div>
+<div class="cargo">
+${cargos[x.cargo][0]}
+</div>
+`;
+
+
+i.querySelector(
+".nome"
+).textContent=x.nome;
+
+
+i.querySelector(
+".partido"
+).textContent=x.partido;
+
+
+let a=
+document.createElement("div");
+
+a.className="acoes";
+
+
+let e=
+document.createElement("button");
+
+e.className="editar";
+e.textContent="EDITAR";
+
+e.onclick=
+()=>editar(x.id);
+
+
+let z=
+document.createElement("button");
+
+z.className="excluir";
+z.textContent="EXCLUIR";
+
+z.onclick=
+()=>excluir(x.id);
+
+
+a.append(e,z);
+
+i.append(a);
+
+d.append(i);
+
+lista.append(d);
+
+});
+
+}
+
+
+let pInicial=
+presetAtual();
+
+document.getElementById(
+"preset"
+).value=pInicial;
+
+atualizarTextoPreset();
+atualizarCargos();
+render();
+
+</script>
+
+</body>
+</html>

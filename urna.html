@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Urna Eletrônica | Cidade Alta RP</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#e5e5e5;font-family:Arial;display:flex;align-items:center;justify-content:center;padding:20px}.urna{width:900px;max-width:100%;background:#bdbdbd;border-radius:18px;padding:25px;box-shadow:0 15px 40px #0004}.tela-area{background:#111;padding:14px;border-radius:7px}.tela{min-height:390px;background:#dce2d5;border:5px solid #555;padding:25px;color:#111;position:relative}.tela h2{margin:0 0 22px;font-size:23px}.linha{margin:10px 0;font-size:17px}.numero{font-size:34px;letter-spacing:7px;min-height:45px;border-bottom:2px solid #222;width:240px;font-weight:bold}.candidato{display:none;margin-top:15px}.candidato img{width:100px;height:100px;object-fit:cover;border:2px solid #222;background:#aaa}.info{margin-top:8px;font-size:16px;line-height:1.5}.aviso{position:absolute;bottom:15px;left:25px;right:25px;font-size:13px}.teclado{margin-top:18px;display:grid;grid-template-columns:repeat(5,1fr);gap:9px}.tecla{min-height:55px;border-radius:7px;border:1px solid #555;background:#202020;color:#fff;font-size:20px;font-weight:bold;cursor:pointer;box-shadow:0 3px 0 #000}.tecla:active{transform:translateY(2px);box-shadow:none}.branco{background:#fff;color:#111}.corrige{background:#d99b20}.confirma{background:#16843c}.acoes{grid-column:span 5;display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}.acoes .tecla{font-size:14px}.overlay{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}.box{background:#fff;width:100%;max-width:420px;padding:25px;border-radius:15px;text-align:center}.box h2{margin-top:0}.box p{color:#666;font-size:14px}.box input{width:100%;padding:13px;border:1px solid #ccc;border-radius:8px;font-size:16px;text-align:center;margin:10px 0}.box button{width:100%;padding:13px;border:0;border-radius:8px;background:#111;color:#fff;font-weight:bold;cursor:pointer}.erro{color:#c00;font-size:13px;display:none;margin-top:8px}@media(max-width:600px){.urna{padding:12px}.tela{min-height:350px;padding:17px}.teclado{grid-template-columns:repeat(3,1fr)}.acoes{grid-column:span 3}}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="identificacao">
+<div class="box">
+<h2>Identificação do eleitor</h2>
+<p>Digite seu código de eleitor para iniciar a votação.</p>
+<input id="codigoEleitor" type="text" inputmode="numeric" maxlength="6" placeholder="Código do eleitor">
+<button onclick="iniciar()">INICIAR VOTAÇÃO</button>
+<div class="erro" id="erro">Código inválido.</div>
+</div>
+</div>
+
+<div class="urna">
+<div class="tela-area">
+<div class="tela">
+<h2 id="titulo">IDENTIFICAÇÃO</h2>
+<div class="linha">Número:</div>
+<div class="numero" id="numero"></div>
+<div class="candidato" id="candidato">
+<img id="foto" src="" alt="Foto do candidato">
+<div class="info" id="info"></div>
+</div>
+<div class="aviso" id="aviso">Digite os números no teclado.</div>
+</div>
+</div>
+
+<div class="teclado">
+<button class="tecla" onclick="digitar(1)">1</button>
+<button class="tecla" onclick="digitar(2)">2</button>
+<button class="tecla" onclick="digitar(3)">3</button>
+<button class="tecla" onclick="digitar(4)">4</button>
+<button class="tecla" onclick="digitar(5)">5</button>
+<button class="tecla" onclick="digitar(6)">6</button>
+<button class="tecla" onclick="digitar(7)">7</button>
+<button class="tecla" onclick="digitar(8)">8</button>
+<button class="tecla" onclick="digitar(9)">9</button>
+<button class="tecla"></button>
+<button class="tecla" onclick="digitar(0)">0</button>
+<button class="tecla"></button>
+<div class="acoes">
+<button class="tecla branco" onclick="branco()">BRANCO</button>
+<button class="tecla corrige" onclick="corrigir()">CORRIGE</button>
+<button class="tecla confirma" onclick="confirmar()">CONFIRMA</button>
+</div>
+</div>
+</div>
+
+<script>
+const PRESET_KEY="cidadeAltaPreset";
+function obterPreset(){let p=localStorage.getItem(PRESET_KEY);if(p!=="presidente"&&p!=="outros"){p="outros";localStorage.setItem(PRESET_KEY,p)}return p}
+
+const todasEtapas=[
+{cargo:"federal",nome:"DEPUTADO FEDERAL",digitos:4},
+{cargo:"estadual",nome:"DEPUTADO ESTADUAL",digitos:5},
+{cargo:"senador1",nome:"1º SENADOR",digitos:3},
+{cargo:"senador2",nome:"2º SENADOR",digitos:3},
+{cargo:"governador",nome:"GOVERNADOR",digitos:2},
+{cargo:"presidente",nome:"PRESIDENTE",digitos:2}
+];
+
+const etapas=obterPreset()==="presidente"
+?todasEtapas.filter(x=>x.cargo==="presidente")
+:todasEtapas.filter(x=>x.cargo!=="presidente");
+
+let etapaAtual=0,numero="",votos={},eleitorAtual=null,candidatoAtual=null,brancoAtual=false,audioContext=null;
+
+function iniciarAudio(){
+if(!audioContext){
+const AudioContext=window.AudioContext||window.webkitAudioContext;
+if(!AudioContext)return null;
+audioContext=new AudioContext
+}
+if(audioContext.state==="suspended")audioContext.resume();
+return audioContext
+}
+
+function tocar(freq,duracao,volume=0.08,tipo="square",inicio=0){
+const ctx=iniciarAudio();if(!ctx)return;
+const agora=ctx.currentTime+inicio,osc=ctx.createOscillator(),g=ctx.createGain();
+osc.type=tipo;osc.frequency.setValueAtTime(freq,agora);
+g.gain.setValueAtTime(.0001,agora);
+g.gain.exponentialRampToValueAtTime(volume,agora+.008);
+g.gain.exponentialRampToValueAtTime(.0001,agora+duracao);
+osc.connect(g);g.connect(ctx.destination);osc.start(agora);osc.stop(agora+duracao+.01)
+}
+
+function somTecla(){tocar(850,.055)}
+function somCorrige(){const ctx=iniciarAudio();if(!ctx)return;const a=ctx.currentTime,osc=ctx.createOscillator(),g=ctx.createGain();osc.type="square";osc.frequency.setValueAtTime(500,a);osc.frequency.exponentialRampToValueAtTime(260,a+.16);g.gain.setValueAtTime(.0001,a);g.gain.exponentialRampToValueAtTime(.1,a+.01);g.gain.exponentialRampToValueAtTime(.0001,a+.18);osc.connect(g);g.connect(ctx.destination);osc.start(a);osc.stop(a+.19)}
+function somBranco(){tocar(700,.09)}
+function somConfirma(){tocar(760,.09,.08,"square");tocar(950,.09,.08,"square",.11);tocar(1150,.42,.1,"square",.23)}
+function somErro(){tocar(220,.25)}
+
+function ler(chave,valor){
+try{return JSON.parse(localStorage.getItem(chave))||valor}catch(e){return valor}
+}
+
+function verificarEleicao(){
+const status=localStorage.getItem("cidadeAltaEleicaoStatus"),periodo=ler("cidadeAltaEleicaoPeriodo",null);
+if(status!=="aberta")return false;
+if(periodo){
+const agora=new Date(),inicio=new Date(periodo.inicio),fim=new Date(periodo.fim);
+if(agora<inicio||agora>=fim)return false
+}
+return true
+}
+
+function iniciar(){
+iniciarAudio();
+const codigo=document.getElementById("codigoEleitor").value.trim(),eleitores=ler("eleitoresCidadeAlta",[]),eleitor=eleitores.find(x=>String(x.id)===codigo),erro=document.getElementById("erro");
+erro.style.display="none";
+if(!verificarEleicao()){somErro();erro.textContent="A eleição está fechada.";erro.style.display="block";return}
+if(!eleitor){somErro();erro.textContent="Código de eleitor inválido.";erro.style.display="block";return}
+if(eleitor.votou){somErro();erro.textContent="Este código já foi utilizado.";erro.style.display="block";return}
+eleitorAtual={id:eleitor.id};
+document.getElementById("identificacao").style.display="none";
+carregarEtapa()
+}
+
+function carregarEtapa(){
+numero="";candidatoAtual=null;brancoAtual=false;
+const etapa=etapas[etapaAtual];
+if(!etapa)return finalizar();
+document.getElementById("titulo").textContent=etapa.nome;
+document.getElementById("numero").textContent="";
+document.getElementById("candidato").style.display="none";
+document.getElementById("aviso").textContent="Digite os números no teclado."
+}
+
+function digitar(n){
+const etapa=etapas[etapaAtual];
+if(numero.length>=etapa.digitos)return;
+somTecla();brancoAtual=false;numero+=String(n);
+document.getElementById("numero").textContent=numero;
+procurarCandidato()
+}
+
+function procurarCandidato(){
+const etapa=etapas[etapaAtual];
+if(numero.length!==etapa.digitos)return;
+
+const candidatos=ler("candidatosCidadeAlta",{});
+
+/* CORREÇÃO: procura pelo cargo e número */
+const candidato=Object.values(candidatos).find(x=>
+x&&x.cargo===etapa.cargo&&String(x.numero)===String(numero)
+);
+
+candidatoAtual=candidato||null;
+const area=document.getElementById("candidato");
+
+if(candidato){
+
+if(etapa.cargo==="senador2"&&votos.senador1&&votos.senador1.tipo==="candidato"&&String(votos.senador1.numero)===String(numero)){
+candidatoAtual=null;area.style.display="none";
+document.getElementById("aviso").textContent="Esse candidato já foi escolhido na 1ª vaga. Escolha outro.";
+return
+}
+
+area.style.display="block";
+const foto=document.getElementById("foto");
+
+if(candidato.foto){foto.src=candidato.foto;foto.style.display="block"}
+else{foto.removeAttribute("src");foto.style.display="none"}
+
+document.getElementById("info").innerHTML="<strong>"+escapeHtml(candidato.nome||"")+"</strong><br>Partido: "+escapeHtml(candidato.partido||"-")+"<br>Número: "+escapeHtml(candidato.numero||numero);
+document.getElementById("aviso").textContent="Confira os dados e confirme seu voto."
+
+}else{
+area.style.display="none";
+document.getElementById("aviso").textContent="VOTO NULO. Número inexistente."
+}
+}
+
+function branco(){
+somBranco();numero="";candidatoAtual=null;brancoAtual=true;
+document.getElementById("numero").textContent="BRANCO";
+document.getElementById("candidato").style.display="none";
+document.getElementById("aviso").textContent="Voto em branco. Pressione CONFIRMA."
+}
+
+function corrigir(){
+somCorrige();numero="";candidatoAtual=null;brancoAtual=false;
+document.getElementById("numero").textContent="";
+document.getElementById("candidato").style.display="none";
+document.getElementById("aviso").textContent="Digite os números no teclado."
+}
+
+function confirmar(){
+const etapa=etapas[etapaAtual];
+
+if(!brancoAtual&&numero.length!==etapa.digitos){
+somErro();alert("Digite o número completo ou escolha BRANCO.");return
+}
+
+if(etapa.cargo==="senador2"&&!brancoAtual&&candidatoAtual&&votos.senador1&&votos.senador1.tipo==="candidato"&&String(votos.senador1.numero)===String(numero)){
+somErro();alert("Você não pode votar no mesmo candidato para as duas vagas de senador.");corrigir();return
+}
+
+somConfirma();
+
+let tipo="nulo",valor=numero;
+if(brancoAtual){tipo="branco";valor=""}
+else if(candidatoAtual)tipo="candidato";
+
+votos[etapa.cargo]={tipo:tipo,numero:valor};
+etapaAtual++;
+
+if(etapaAtual>=etapas.length){setTimeout(finalizar,650);return}
+setTimeout(carregarEtapa,300)
+}
+
+function finalizar(){
+let dados=ler("votosCidadeAlta",{
+federal:{},estadual:{},senador1:{},senador2:{},governador:{},presidente:{},
+brancos:{federal:0,estadual:0,senador1:0,senador2:0,governador:0,presidente:0},
+nulos:{federal:0,estadual:0,senador1:0,senador2:0,governador:0,presidente:0}
+});
+
+["federal","estadual","senador1","senador2","governador","presidente"].forEach(k=>{
+dados[k]=dados[k]||{};
+dados.brancos[k]=Number(dados.brancos[k]||0);
+dados.nulos[k]=Number(dados.nulos[k]||0)
+});
+
+etapas.forEach(etapa=>{
+const voto=votos[etapa.cargo];
+if(!voto)return;
+
+if(voto.tipo==="branco")dados.brancos[etapa.cargo]++;
+else if(voto.tipo==="nulo")dados.nulos[etapa.cargo]++;
+else{
+if(!dados[etapa.cargo][voto.numero])dados[etapa.cargo][voto.numero]=0;
+dados[etapa.cargo][voto.numero]++
+}
+});
+
+localStorage.setItem("votosCidadeAlta",JSON.stringify(dados));
+
+const eleitores=ler("eleitoresCidadeAlta",[]);
+const indice=eleitores.findIndex(x=>String(x.id)===String(eleitorAtual.id));
+
+if(indice!==-1){
+eleitores[indice].votou=true;
+eleitores[indice].dataVoto=new Date().toISOString();
+localStorage.setItem("eleitoresCidadeAlta",JSON.stringify(eleitores))
+}
+
+localStorage.setItem("cidadeAltaJaVotou2026","true");
+
+document.querySelector(".urna").innerHTML=`
+<div style="width:100%;background:#dce2d5;border:5px solid #555;padding:50px 25px;text-align:center;min-height:350px;display:flex;flex-direction:column;align-items:center;justify-content:center">
+<h1>FIM</h1>
+<p style="font-size:18px">Seu voto foi registrado com sucesso.</p>
+<p style="color:#555">Obrigado por participar das eleições Cidade Alta RP.</p>
+</div>`
+}
+
+function escapeHtml(text){
+return String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")
+}
+</script>
+</body>
+</html>

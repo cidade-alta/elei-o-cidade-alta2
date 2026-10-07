@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Administração | Cidade Alta RP</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+margin:0;
+font-family:Arial,Helvetica,sans-serif;
+background:#f5f6f8;
+color:#171717
+}
+header{
+background:#fff;
+border-bottom:1px solid #e8e8e8;
+padding:18px 20px;
+position:sticky;
+top:0;
+z-index:5
+}
+.top{
+max-width:1050px;
+margin:auto;
+display:flex;
+align-items:center;
+justify-content:space-between
+}
+.logo{
+font-size:20px;
+font-weight:800;
+letter-spacing:-.5px
+}
+.logo span{color:#2563eb}
+.badge{
+font-size:12px;
+font-weight:700;
+background:#eef2ff;
+color:#2563eb;
+padding:7px 10px;
+border-radius:20px
+}
+main{
+max-width:1050px;
+margin:auto;
+padding:22px 16px 40px
+}
+.welcome{margin-bottom:20px}
+.welcome h1{
+font-size:27px;
+margin:0 0 6px
+}
+.welcome p{
+margin:0;
+color:#737373
+}
+.card{
+background:#fff;
+border:1px solid #e9e9e9;
+border-radius:16px;
+padding:20px;
+margin-bottom:16px;
+box-shadow:0 3px 12px #00000008
+}
+.card h2{
+font-size:17px;
+margin:0 0 16px
+}
+.status{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:15px
+}
+.status-left{
+display:flex;
+align-items:center;
+gap:12px
+}
+.dot{
+width:11px;
+height:11px;
+border-radius:50%;
+background:#ef4444
+}
+.dot.open{background:#16a34a}
+.status-title{
+font-size:18px;
+font-weight:800
+}
+.status-sub{
+font-size:13px;
+color:#777;
+margin-top:3px
+}
+.stats{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:10px
+}
+.stat{
+background:#f8f9fb;
+border:1px solid #ededed;
+border-radius:12px;
+padding:15px
+}
+.stat span{
+font-size:12px;
+color:#777
+}
+.stat strong{
+display:block;
+font-size:25px;
+margin-top:5px
+}
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:14px
+}
+label{
+font-size:12px;
+font-weight:700;
+color:#555;
+display:block;
+margin-bottom:6px
+}
+input,select{
+width:100%;
+height:43px;
+border:1px solid #ddd;
+border-radius:9px;
+padding:0 12px;
+font-size:14px;
+outline:none;
+background:#fff
+}
+input:focus,select:focus{
+border-color:#2563eb;
+box-shadow:0 0 0 3px #2563eb15
+}
+.time{
+display:grid;
+grid-template-columns:1fr 100px;
+gap:8px;
+margin-top:8px
+}
+.actions{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:10px
+}
+button{
+height:45px;
+border:0;
+border-radius:10px;
+font-size:13px;
+font-weight:800;
+cursor:pointer;
+transition:.15s
+}
+button:active{transform:scale(.98)}
+.primary{background:#2563eb;color:#fff}
+.success{background:#16a34a;color:#fff}
+.danger{background:#ef4444;color:#fff}
+.light{
+background:#f3f4f6;
+color:#222;
+border:1px solid #e5e7eb
+}
+.dark{background:#171717;color:#fff}
+.section-title{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:14px
+}
+.section-title h2{margin:0}
+.section-title span{
+font-size:12px;
+color:#888
+}
+.result{
+border:1px solid #e8e8e8;
+border-radius:12px;
+padding:14px;
+margin-top:9px;
+background:#fafafa
+}
+.result h3{
+font-size:13px;
+margin:0 0 7px;
+color:#555
+}
+.result strong{font-size:15px}
+.login-bg{
+min-height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:20px;
+background:#f5f6f8
+}
+.login{
+width:100%;
+max-width:390px;
+background:#fff;
+border:1px solid #e7e7e7;
+border-radius:18px;
+padding:25px;
+box-shadow:0 8px 30px #0000000d
+}
+.login-logo{
+font-size:23px;
+font-weight:900;
+margin-bottom:5px
+}
+.login-logo span{color:#2563eb}
+.login p{
+color:#777;
+font-size:13px;
+margin:0 0 20px
+}
+.login input{margin-bottom:10px}
+.erro{
+display:none;
+color:#dc2626;
+font-size:13px;
+margin-top:10px
+}
+.preset-info{
+font-size:12px;
+color:#777;
+margin:8px 0 0
+}
+@media(max-width:650px){
+header{padding:15px}
+main{padding:18px 12px 30px}
+.welcome h1{font-size:23px}
+.stats{grid-template-columns:1fr 1fr}
+.grid{grid-template-columns:1fr}
+.actions{grid-template-columns:1fr}
+.time{grid-template-columns:1fr 90px}
+.status{align-items:flex-start}
+}
+</style>
+</head>
+
+<body>
+
+<div id="login" class="login-bg">
+<div class="login">
+
+<div class="login-logo">
+CIDADE ALTA <span>RP</span>
+</div>
+
+<p>Painel administrativo da eleição</p>
+
+<input id="user" placeholder="Usuário">
+<input id="pass" type="password" placeholder="Senha">
+
+<button class="primary" style="width:100%" onclick="entrar()">
+ENTRAR
+</button>
+
+<div id="erro" class="erro">
+Usuário ou senha incorretos.
+</div>
+
+</div>
+</div>
+
+<div id="painel" style="display:none">
+
+<header>
+<div class="top">
+<div class="logo">
+CIDADE ALTA <span>RP</span>
+</div>
+
+<div class="badge">
+ADMINISTRAÇÃO
+</div>
+</div>
+</header>
+
+<main>
+
+<div class="welcome">
+<h1>Painel administrativo</h1>
+<p>Controle da eleição e gerenciamento do sistema.</p>
+</div>
+
+<div class="card">
+
+<div class="status">
+
+<div class="status-left">
+
+<div id="dot" class="dot"></div>
+
+<div>
+
+<div id="status" class="status-title">
+ELEIÇÃO ENCERRADA
+</div>
+
+<div id="statusSub" class="status-sub">
+O sistema está aguardando uma eleição.
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>Visão geral</h2>
+
+<div class="stats">
+
+<div class="stat">
+<span>Eleitores</span>
+<strong id="eleitores">0</strong>
+</div>
+
+<div class="stat">
+<span>Votos</span>
+<strong id="votos">0</strong>
+</div>
+
+<div class="stat">
+<span>Brancos</span>
+<strong id="brancos">0</strong>
+</div>
+
+<div class="stat">
+<span>Nulos</span>
+<strong id="nulos">0</strong>
+</div>
+
+</div>
+
+</div>
+
+<!-- PRESET -->
+
+<div class="card">
+
+<div class="section-title">
+<h2>Preset da eleição</h2>
+<span>Configuração</span>
+</div>
+
+<label>SELECIONE O PRESET</label>
+
+<select id="preset">
+<option value="presidente">Preset 1 • Presidente</option>
+<option value="outros">Preset 2 • Outros cargos</option>
+</select>
+
+<p class="preset-info" id="presetInfo">
+Preset 2: Deputado Federal, Deputado Estadual, 1º Senador, 2º Senador e Governador.
+</p>
+
+<button
+class="dark"
+style="width:100%;margin-top:14px"
+onclick="salvarPreset()"
+>
+SALVAR PRESET
+</button>
+
+</div>
+
+<div class="card">
+
+<div class="section-title">
+<h2>Período da eleição</h2>
+<span>Configuração</span>
+</div>
+
+<div class="grid">
+
+<div>
+
+<label>INÍCIO</label>
+
+<div class="time">
+
+<input
+id="di"
+placeholder="DD/MM/AAAA"
+maxlength="10"
+oninput="md(this)"
+>
+
+<input
+id="hi"
+placeholder="HH:MM"
+maxlength="5"
+oninput="mh(this)"
+>
+
+</div>
+
+</div>
+
+<div>
+
+<label>FIM</label>
+
+<div class="time">
+
+<input
+id="df"
+placeholder="DD/MM/AAAA"
+maxlength="10"
+oninput="md(this)"
+>
+
+<input
+id="hf"
+placeholder="HH:MM"
+maxlength="5"
+oninput="mh(this)"
+>
+
+</div>
+
+</div>
+
+</div>
+
+<button
+class="dark"
+style="width:100%;margin-top:14px"
+onclick="periodo()"
+>
+CONFIGURAR PERÍODO
+</button>
+
+</div>
+
+<div class="card">
+
+<div class="section-title">
+<h2>Eleição</h2>
+<span>Controle</span>
+</div>
+
+<div class="actions">
+
+<button class="success" onclick="abrir()">
+ABRIR ELEIÇÃO
+</button>
+
+<button class="danger" onclick="fechar()">
+ENCERRAR ELEIÇÃO
+</button>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="section-title">
+<h2>Gerenciamento</h2>
+<span>Acessos rápidos</span>
+</div>
+
+<div class="actions">
+
+<button
+class="primary"
+onclick="location.href='resultados.html'"
+>
+RESULTADOS
+</button>
+
+<button
+class="light"
+onclick="location.href='candidatos.html'"
+>
+CADASTRAR CANDIDATO
+</button>
+
+<button
+class="light"
+onclick="location.href='eleitores.html'"
+>
+ELEITORES
+</button>
+
+<button
+class="light"
+onclick="location.href='urna.html'"
+>
+TESTAR URNA
+</button>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="section-title">
+<h2>Candidatos</h2>
+<span>Gerenciamento</span>
+</div>
+
+<button
+class="danger"
+style="width:100%"
+onclick="removerCandidatos()"
+>
+REMOVER TODOS OS CANDIDATOS
+</button>
+
+<p style="font-size:12px;color:#888;margin:10px 0 0">
+Essa ação remove todos os candidatos cadastrados.
+</p>
+
+</div>
+
+<div class="card">
+
+<div class="section-title">
+<h2>Manutenção</h2>
+<span>Atenção</span>
+</div>
+
+<button
+class="danger"
+style="width:100%"
+onclick="resetar()"
+>
+RESETAR VOTOS
+</button>
+
+<p style="font-size:12px;color:#888;margin:10px 0 0">
+Os códigos dos eleitores não serão liberados ao resetar os votos.
+</p>
+
+</div>
+
+<div
+id="final"
+class="card"
+style="display:none"
+>
+
+<div class="section-title">
+
+<h2>🏆 Candidatos vencedores</h2>
+
+<span>Eleição finalizada</span>
+
+</div>
+
+<div id="listaFinal"></div>
+
+</div>
+
+</main>
+</div>
+
+<script>
+
+const C=[
+"federal",
+"estadual",
+"senador1",
+"senador2",
+"governador",
+"presidente"
+];
+
+const N=[
+"DEPUTADO FEDERAL",
+"DEPUTADO ESTADUAL",
+"1º SENADOR",
+"2º SENADOR",
+"GOVERNADOR",
+"PRESIDENTE"
+];
+
+const PRESET_KEY="cidadeAltaPreset";
+
+
+function get(k,d){
+
+try{
+return JSON.parse(localStorage.getItem(k))||d
+}catch{
+return d
+}
+
+}
+
+
+/* =========================
+PRESET
+========================= */
+
+function carregarPreset(){
+
+let p=localStorage.getItem(PRESET_KEY);
+
+if(p!=="presidente"&&p!=="outros"){
+p="outros";
+localStorage.setItem(PRESET_KEY,p);
+}
+
+preset.value=p;
+
+atualizarTextoPreset();
+
+}
+
+
+function atualizarTextoPreset(){
+
+if(preset.value==="presidente"){
+
+presetInfo.textContent=
+"Preset 1: somente Presidente.";
+
+}else{
+
+presetInfo.textContent=
+"Preset 2: Deputado Federal, Deputado Estadual, 1º Senador, 2º Senador e Governador.";
+
+}
+
+}
+
+
+function salvarPreset(){
+
+let p=preset.value;
+
+localStorage.setItem(
+PRESET_KEY,
+p
+);
+
+atualizarTextoPreset();
+
+alert(
+p==="presidente"
+?
+"Preset 1 salvo. A urna votará somente para Presidente."
+:
+"Preset 2 salvo. A urna votará para os outros cargos."
+);
+
+}
+
+
+preset.addEventListener(
+"change",
+atualizarTextoPreset
+);
+
+
+function entrar(){
+
+if(
+user.value=="admin" &&
+pass.value=="CA2026"
+){
+
+login.style.display="none";
+painel.style.display="block";
+
+carregarPreset();
+carregar();
+atualizar();
+
+}else{
+
+erro.style.display="block";
+
+}
+
+}
+
+
+function md(e){
+
+let v=e.value.replace(/\D/g,"").slice(0,8);
+
+if(v.length>4)
+v=v.slice(0,2)+"/"+v.slice(2,4)+"/"+v.slice(4);
+else if(v.length>2)
+v=v.slice(0,2)+"/"+v.slice(2);
+
+e.value=v;
+
+}
+
+
+function mh(e){
+
+let v=e.value.replace(/\D/g,"").slice(0,4);
+
+if(v.length>2)
+v=v.slice(0,2)+":"+v.slice(2);
+
+e.value=v;
+
+}
+
+
+function dt(s,h){
+
+let p=s.split("/");
+let t=h.split(":");
+
+if(p.length!=3||t.length!=2)
+return null;
+
+let d=new Date(
++p[2],
++p[1]-1,
++p[0],
++t[0],
+t[1]
+);
+
+if(
+isNaN(d)||
+d.getDate()!=+p[0]||
+d.getMonth()!=+p[1]-1||
+d.getHours()!=+t[0]||
+d.getMinutes()!=+t[1]
+)
+return null;
+
+return d;
+
+}
+
+
+function periodo(){
+
+let a=dt(di.value,hi.value);
+let b=dt(df.value,hf.value);
+
+if(!a||!b||b<=a){
+
+alert("Data ou horário inválido.");
+return;
+
+}
+
+localStorage.setItem(
+"cidadeAltaEleicaoPeriodo",
+JSON.stringify({
+inicio:a.toISOString(),
+fim:b.toISOString()
+})
+);
+
+localStorage.removeItem("cidadeAltaEleicaoFinalizada");
+
+alert("Período configurado.");
+
+atualizar();
+
+}
+
+
+function carregar(){
+
+let p=get(
+"cidadeAltaEleicaoPeriodo",
+null
+);
+
+if(!p)return;
+
+let a=new Date(p.inicio);
+let b=new Date(p.fim);
+
+di.value=fd(a);
+hi.value=fh(a);
+
+df.value=fd(b);
+hf.value=fh(b);
+
+}
+
+
+function fd(d){
+
+return String(d.getDate()).padStart(2,"0")+
+"/"+
+String(d.getMonth()+1).padStart(2,"0")+
+"/"+
+d.getFullYear();
+
+}
+
+
+function fh(d){
+
+return String(d.getHours()).padStart(2,"0")+
+":"+
+String(d.getMinutes()).padStart(2,"0");
+
+}
+
+
+function abrir(){
+
+let p=get(
+"cidadeAltaEleicaoPeriodo",
+null
+);
+
+if(!p){
+
+alert("Configure o período primeiro.");
+return;
+
+}
+
+let n=Date.now();
+
+let a=new Date(p.inicio).getTime();
+let b=new Date(p.fim).getTime();
+
+if(n<a){
+
+alert("A eleição ainda não começou.");
+return;
+
+}
+
+if(n>=b){
+
+alert("O período já terminou.");
+return;
+
+}
+
+localStorage.setItem(
+"cidadeAltaEleicaoStatus",
+"aberta"
+);
+
+localStorage.removeItem(
+"cidadeAltaEleicaoFinalizada"
+);
+
+atualizar();
+
+}
+
+
+function fechar(){
+
+if(!confirm(
+"Encerrar e finalizar a eleição agora?"
+))
+return;
+
+localStorage.setItem(
+"cidadeAltaEleicaoStatus",
+"fechada"
+);
+
+localStorage.setItem(
+"cidadeAltaEleicaoFinalizada",
+"true"
+);
+
+atualizar();
+
+resultado();
+
+}
+
+
+function atualizar(){
+
+let p=get(
+"cidadeAltaEleicaoPeriodo",
+null
+);
+
+let s=localStorage.getItem(
+"cidadeAltaEleicaoStatus"
+);
+
+let finalizada=
+localStorage.getItem(
+"cidadeAltaEleicaoFinalizada"
+)==="true";
+
+
+if(
+p &&
+Date.now()>=new Date(p.fim).getTime()
+){
+
+finalizada=true;
+
+localStorage.setItem(
+"cidadeAltaEleicaoStatus",
+"fechada"
+);
+
+localStorage.setItem(
+"cidadeAltaEleicaoFinalizada",
+"true"
+);
+
+}
+
+
+let aberta=
+s=="aberta" &&
+!finalizada;
+
+
+status.textContent=
+aberta
+?
+"ELEIÇÃO ABERTA"
+:
+"ELEIÇÃO ENCERRADA";
+
+
+dot.className=
+aberta
+?
+"dot open"
+:
+"dot";
+
+
+statusSub.textContent=
+aberta
+?
+"Os eleitores podem votar normalmente."
+:
+finalizada
+?
+"Eleição finalizada. Resultado disponível."
+:
+"O sistema está aguardando uma eleição.";
+
+
+estatisticas();
+
+if(finalizada){
+
+resultado();
+
+}else{
+
+final.style.display="none";
+
+}
+
+}
+
+
+function estatisticas(){
+
+let e=get(
+"eleitoresCidadeAlta",
+[]
+);
+
+let v=get(
+"votosCidadeAlta",
+{}
+);
+
+let total=0;
+let b=0;
+let n=0;
+
+C.forEach(k=>{
+
+Object.values(
+v[k]||{}
+).forEach(x=>{
+total+=+x||0;
+});
+
+b+=+(v.brancos?.[k]||0);
+n+=+(v.nulos?.[k]||0);
+
+});
+
+eleitores.textContent=e.length;
+votos.textContent=total;
+brancos.textContent=b;
+nulos.textContent=n;
+
+}
+
+
+function removerCandidatos(){
+
+let candidatos=get(
+"candidatosCidadeAlta",
+{}
+);
+
+let quantidade=Object.keys(candidatos).length;
+
+if(!quantidade){
+
+alert("Não existem candidatos cadastrados.");
+return;
+
+}
+
+if(!confirm(
+"REMOVER TODOS OS CANDIDATOS?\n\n"+
+"Serão removidos "+quantidade+
+" candidato(s).\n\n"+
+"Essa ação não pode ser desfeita."
+))
+return;
+
+localStorage.removeItem(
+"candidatosCidadeAlta"
+);
+
+alert(
+quantidade+
+" candidato(s) removido(s)."
+);
+
+}
+
+
+function resultado(){
+
+let finalizada=
+localStorage.getItem(
+"cidadeAltaEleicaoFinalizada"
+)==="true";
+
+if(!finalizada){
+
+final.style.display="none";
+return;
+
+}
+
+final.style.display="block";
+
+listaFinal.innerHTML="";
+
+let c=get(
+"candidatosCidadeAlta",
+{}
+);
+
+let v=get(
+"votosCidadeAlta",
+{}
+);
+
+
+C.forEach((k,i)=>{
+
+let a=Object.values(c)
+
+.filter(x=>x.cargo==k)
+
+.map(x=>({
+
+...x,
+
+votos:+(
+v[k]?.[x.numero]||0
+)
+
+}))
+
+.sort(
+(a,b)=>b.votos-a.votos
+);
+
+
+let box=document.createElement("div");
+
+box.className="result";
+
+
+let h=document.createElement("h3");
+
+h.textContent=N[i];
+
+box.appendChild(h);
+
+
+if(!a.length){
+
+box.append(
+"Nenhum candidato cadastrado."
+);
+
+}else{
+
+let x=a[0];
+
+let strong=
+document.createElement("strong");
+
+strong.textContent=
+x.numero+
+" • "+
+x.nome+
+" ("+
+x.partido+
+")";
+
+box.appendChild(strong);
+
+
+let p=
+document.createElement("div");
+
+p.style.cssText=
+"font-size:12px;color:#777;margin-top:5px";
+
+p.textContent=
+x.votos+
+(
+x.votos==1
+?
+" voto"
+:
+" votos"
+);
+
+box.appendChild(p);
+
+}
+
+listaFinal.appendChild(box);
+
+});
+
+}
+
+
+function resetar(){
+
+if(!confirm(
+"Apagar todos os votos?\n\n"+
+"Os códigos dos eleitores continuarão utilizados."
+))
+return;
+
+
+localStorage.setItem(
+"votosCidadeAlta",
+JSON.stringify({
+
+federal:{},
+estadual:{},
+senador1:{},
+senador2:{},
+governador:{},
+presidente:{},
+
+brancos:{
+federal:0,
+estadual:0,
+senador1:0,
+senador2:0,
+governador:0,
+presidente:0
+},
+
+nulos:{
+federal:0,
+estadual:0,
+senador1:0,
+senador2:0,
+governador:0,
+presidente:0
+}
+
+})
+);
+
+atualizar();
+
+alert("Votos resetados.");
+
+}
+
+
+setInterval(
+atualizar,
+3000
+);
+
+</script>
+
+</body>
+</html>

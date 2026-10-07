@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Resultados - Cidade Alta RP</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}
+body{background:#f1f3f5;color:#222;padding:20px}
+.container{max-width:1100px;margin:auto}
+.topo{background:#fff;border:1px solid #e1e1e1;border-radius:16px;padding:20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;box-shadow:0 5px 20px #0001}
+.topo h1{font-size:22px}.topo p{color:#777;font-size:13px;margin-top:5px}
+.voltar,.atualizar{border:0;background:#222;color:#fff;padding:11px 15px;border-radius:8px;font-size:13px;font-weight:bold;text-decoration:none;cursor:pointer}
+.cargo{background:#fff;border:1px solid #e1e1e1;border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 5px 20px #0000000d}
+.cargo h2{font-size:18px;margin-bottom:15px}
+.candidato{border:1px solid #ddd;border-radius:12px;padding:14px;margin-bottom:10px}
+.candidato:last-child{margin-bottom:0}
+.linha{display:flex;align-items:center;gap:14px}
+.foto{width:62px;height:62px;object-fit:cover;border-radius:9px;background:#eee}
+.info{flex:1}.nome{font-weight:900}.partido{color:#777;font-size:12px;margin-top:4px}
+.votos{font-size:20px;font-weight:900}.percentual{color:#777;font-size:12px;margin-top:3px;text-align:right}
+.barra{height:8px;background:#eee;border-radius:20px;overflow:hidden;margin-top:10px}
+.progresso{height:100%;background:#168a42}
+.destaque{display:inline-block;margin-top:7px;padding:4px 7px;border-radius:5px;background:#168a42;color:#fff;font-size:10px;font-weight:900}
+.resumo{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:15px}
+.resumo div{background:#f5f5f5;padding:11px;border-radius:8px;text-align:center}
+.resumo strong{display:block;font-size:17px}.resumo span{color:#777;font-size:10px}
+.sem{color:#777;padding:10px 0}
+.status{font-size:12px;margin-top:6px;color:#168a42;font-weight:bold}
+@media(max-width:650px){
+.topo{align-items:flex-start;gap:12px}.linha{align-items:flex-start}.votos{font-size:17px}.resumo{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<header class="topo">
+<div>
+<h1>Resultados da Eleição</h1>
+<p>Cidade Alta RP • Eleições 2026</p>
+<div class="status" id="status">Resultados atualizados</div>
+</div>
+
+<div style="display:flex;gap:8px">
+<button class="atualizar" onclick="renderizar()">Atualizar</button>
+<a href="admin.html" class="voltar">Voltar</a>
+</div>
+</header>
+
+<div id="resultados"></div>
+
+</div>
+
+<script>
+const etapas=[
+{id:"federal",nome:"Deputado Federal"},
+{id:"estadual",nome:"Deputado Estadual"},
+{id:"senador1",nome:"1º Senador"},
+{id:"senador2",nome:"2º Senador"},
+{id:"governador",nome:"Governador"},
+{id:"presidente",nome:"Presidente"}
+];
+
+function ler(chave,valor={}){
+try{return JSON.parse(localStorage.getItem(chave))||valor}catch(e){return valor}
+}
+
+function cargosAtivos(){
+const preset=localStorage.getItem("cidadeAltaPreset")||"outros";
+return preset==="presidente"
+?etapas.filter(x=>x.id==="presidente")
+:etapas.filter(x=>x.id!=="presidente");
+}
+
+function renderizar(){
+const candidatos=ler("candidatosCidadeAlta",{});
+const votos=ler("votosCidadeAlta",{});
+const area=document.getElementById("resultados");
+
+area.innerHTML="";
+
+cargosAtivos().forEach(cargo=>{
+const bloco=document.createElement("section");
+bloco.className="cargo";
+
+const lista=Object.values(candidatos).filter(c=>c&&c.cargo===cargo.id);
+const votosCargo=votos[cargo.id]||{};
+const brancos=Number(votos.brancos?.[cargo.id]||0);
+const nulos=Number(votos.nulos?.[cargo.id]||0);
+
+let totalValidos=0;
+
+lista.forEach(c=>{
+totalValidos+=Number(votosCargo[c.numero]||0);
+});
+
+lista.sort((a,b)=>
+Number(votosCargo[b.numero]||0)-
+Number(votosCargo[a.numero]||0)
+);
+
+const total=totalValidos+brancos+nulos;
+const maior=lista.length?Number(votosCargo[lista[0].numero]||0):0;
+
+let html=`<h2>${cargo.nome}</h2>`;
+
+if(!lista.length){
+
+html+=`<div class="sem">Nenhum candidato cadastrado.</div>`;
+
+}else{
+
+lista.forEach(c=>{
+const quantidade=Number(votosCargo[c.numero]||0);
+const percentual=totalValidos?quantidade/totalValidos*100:0;
+
+html+=`
+<div class="candidato">
+<div class="linha">
+
+${c.foto?
+`<img class="foto" src="${c.foto}">`:
+`<div class="foto"></div>`}
+
+<div class="info">
+<div class="nome">${escapeHtml(c.nome||"")}</div>
+<div class="partido">Nº ${escapeHtml(c.numero||"")} • ${escapeHtml(c.partido||"")}</div>
+
+${quantidade===maior&&maior>0?
+`<span class="destaque">MAIS VOTADO</span>`:""}
+
+</div>
+
+<div>
+<div class="votos">${quantidade}</div>
+<div class="percentual">${percentual.toFixed(1)}%</div>
+</div>
+
+</div>
+
+<div class="barra">
+<div class="progresso" style="width:${percentual}%"></div>
+</div>
+</div>`;
+});
+
+}
+
+html+=`
+<div class="resumo">
+
+<div>
+<strong>${totalValidos}</strong>
+<span>VOTOS VÁLIDOS</span>
+</div>
+
+<div>
+<strong>${brancos}</strong>
+<span>BRANCOS</span>
+</div>
+
+<div>
+<strong>${nulos}</strong>
+<span>NULOS</span>
+</div>
+
+<div>
+<strong>${total}</strong>
+<span>TOTAL</span>
+</div>
+
+</div>`;
+
+bloco.innerHTML=html;
+area.appendChild(bloco);
+});
+
+document.getElementById("status").textContent=
+"Atualizado às "+new Date().toLocaleTimeString("pt-BR");
+}
+
+function escapeHtml(text){
+return String(text)
+.replace(/&/g,"&amp;")
+.replace(/</g,"&lt;")
+.replace(/>/g,"&gt;")
+.replace(/"/g,"&quot;")
+.replace(/'/g,"&#039;");
+}
+
+renderizar();
+
+/* Atualiza os resultados automaticamente */
+setInterval(renderizar,1000);
+</script>
+
+</body>
+</html>

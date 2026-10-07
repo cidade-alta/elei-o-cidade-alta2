@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Eleitores | Cidade Alta RP</title>
+
+<style>
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    font-family:Arial,Helvetica,sans-serif;
+    background:#f3f4f6;
+    color:#111;
+}
+
+header{
+    background:#111;
+    color:#fff;
+    padding:20px;
+}
+
+header h1{
+    margin:0;
+    font-size:23px;
+}
+
+header p{
+    margin:6px 0 0;
+    color:#bbb;
+    font-size:14px;
+}
+
+.container{
+    max-width:1000px;
+    margin:auto;
+    padding:20px;
+}
+
+.card{
+    background:#fff;
+    border-radius:14px;
+    padding:20px;
+    margin-bottom:18px;
+    box-shadow:0 5px 20px rgba(0,0,0,.07);
+}
+
+.resumo{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+}
+
+.numero{
+    background:#f4f4f4;
+    border-radius:10px;
+    padding:15px;
+}
+
+.numero strong{
+    display:block;
+    font-size:25px;
+    margin-top:5px;
+}
+
+.acoes{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+button{
+    border:0;
+    border-radius:8px;
+    padding:11px 14px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.preto{
+    background:#111;
+    color:#fff;
+}
+
+.cinza{
+    background:#e5e5e5;
+    color:#111;
+}
+
+.vermelho{
+    background:#c62828;
+    color:#fff;
+}
+
+.lista{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+
+.eleitor{
+    display:grid;
+    grid-template-columns:110px 1fr auto;
+    align-items:center;
+    gap:12px;
+    border:1px solid #ddd;
+    border-radius:9px;
+    padding:10px;
+}
+
+.codigo{
+    font-size:18px;
+    font-weight:bold;
+    letter-spacing:1px;
+}
+
+.disponivel{
+    color:#16843c;
+    font-size:13px;
+    font-weight:bold;
+}
+
+.utilizado{
+    color:#c62828;
+    font-size:13px;
+    font-weight:bold;
+}
+
+.btnCopiar{
+    background:#111;
+    color:#fff;
+}
+
+.btnCopiar:disabled{
+    background:#aaa;
+    cursor:not-allowed;
+}
+
+.aviso{
+    background:#fff7df;
+    border:1px solid #ead38a;
+    padding:13px;
+    border-radius:9px;
+    font-size:13px;
+    line-height:1.5;
+}
+
+@media(max-width:650px){
+
+    .resumo{
+        grid-template-columns:1fr;
+    }
+
+    .acoes{
+        grid-template-columns:1fr;
+    }
+
+    .eleitor{
+        grid-template-columns:1fr auto;
+    }
+
+    .eleitor .status{
+        grid-column:1/-1;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+
+    <h1>
+        Eleitores | Cidade Alta RP
+    </h1>
+
+    <p>
+        Gerenciamento dos códigos de eleitor
+    </p>
+
+</header>
+
+
+<div class="container">
+
+
+    <div class="card">
+
+        <h2>
+            Códigos de eleitor
+        </h2>
+
+        <div class="aviso">
+
+            O sistema possui <strong>400 códigos únicos</strong>
+            de 6 dígitos. O eleitor recebe apenas o código.
+            Não é necessário cadastrar o nome de cada pessoa.
+
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <div class="resumo">
+
+            <div class="numero">
+
+                Total
+
+                <strong id="total">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div class="numero">
+
+                Disponíveis
+
+                <strong id="disponiveis">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div class="numero">
+
+                Utilizados
+
+                <strong id="utilizados">
+                    0
+                </strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <div class="acoes">
+
+            <button
+                class="preto"
+                onclick="copiarDisponiveis()"
+            >
+                COPIAR DISPONÍVEIS
+            </button>
+
+
+            <button
+                class="cinza"
+                onclick="gerarNovos()"
+            >
+                GERAR NOVOS
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <div
+            class="lista"
+            id="lista"
+        ></div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+const QUANTIDADE=400;
+
+const CHAVE="eleitoresCidadeAlta";
+
+
+/* =========================
+GERAR CÓDIGOS
+========================= */
+
+function gerarCodigo(){
+
+    return String(
+        Math.floor(
+            100000+
+            Math.random()*900000
+        )
+    );
+
+}
+
+
+function gerarEleitores(){
+
+    const usados=new Set();
+
+    const lista=[];
+
+
+    while(
+        lista.length<
+        QUANTIDADE
+    ){
+
+        const codigo=
+            gerarCodigo();
+
+
+        if(
+            usados.has(codigo)
+        ){
+            continue;
+        }
+
+
+        usados.add(codigo);
+
+
+        lista.push({
+
+            id:codigo,
+
+            nome:"",
+
+            votou:false,
+
+            dataVoto:""
+
+        });
+
+    }
+
+
+    return lista;
+
+}
+
+
+/* =========================
+CARREGAR
+========================= */
+
+function carregar(){
+
+    let eleitores;
+
+
+    try{
+
+        eleitores=
+            JSON.parse(
+                localStorage.getItem(
+                    CHAVE
+                )
+            );
+
+    }catch(e){
+
+        eleitores=null;
+
+    }
+
+
+    /*
+      Se não existir uma lista,
+      cria automaticamente 400 códigos.
+    */
+
+    if(
+        !Array.isArray(eleitores) ||
+        eleitores.length!==QUANTIDADE
+    ){
+
+        eleitores=
+            gerarEleitores();
+
+
+        localStorage.setItem(
+            CHAVE,
+            JSON.stringify(
+                eleitores
+            )
+        );
+
+    }
+
+
+    /*
+      Garante que todos os registros
+      tenham a estrutura correta.
+    */
+
+    eleitores=
+        eleitores.map(
+            eleitor=>({
+
+                id:String(
+                    eleitor.id
+                ),
+
+                nome:
+                    eleitor.nome || "",
+
+                votou:
+                    eleitor.votou===true,
+
+                dataVoto:
+                    eleitor.dataVoto || ""
+
+            })
+        );
+
+
+    localStorage.setItem(
+        CHAVE,
+        JSON.stringify(
+            eleitores
+        )
+    );
+
+
+    mostrar(
+        eleitores
+    );
+
+}
+
+
+/* =========================
+MOSTRAR
+========================= */
+
+function mostrar(eleitores){
+
+    const lista=
+        document.getElementById(
+            "lista"
+        );
+
+
+    lista.innerHTML="";
+
+
+    let disponiveis=0;
+
+    let utilizados=0;
+
+
+    eleitores.forEach(
+        eleitor=>{
+
+            if(eleitor.votou){
+
+                utilizados++;
+
+            }else{
+
+                disponiveis++;
+
+            }
+
+
+            const item=
+                document.createElement(
+                    "div"
+                );
+
+
+            item.className=
+                "eleitor";
+
+
+            const codigo=
+                document.createElement(
+                    "div"
+                );
+
+
+            codigo.className=
+                "codigo";
+
+            codigo.textContent=
+                eleitor.id;
+
+
+            const status=
+                document.createElement(
+                    "div"
+                );
+
+
+            status.className=
+                "status";
+
+
+            if(eleitor.votou){
+
+                status.innerHTML=
+                    '<span class="utilizado">UTILIZADO</span>';
+
+            }else{
+
+                status.innerHTML=
+                    '<span class="disponivel">DISPONÍVEL</span>';
+
+            }
+
+
+            const botao=
+                document.createElement(
+                    "button"
+                );
+
+
+            botao.className=
+                "btnCopiar";
+
+            botao.textContent=
+                "COPIAR";
+
+
+            botao.disabled=
+                eleitor.votou;
+
+
+            botao.onclick=
+                function(){
+
+                    copiar(
+                        eleitor.id
+                    );
+
+                };
+
+
+            item.appendChild(
+                codigo
+            );
+
+            item.appendChild(
+                status
+            );
+
+            item.appendChild(
+                botao
+            );
+
+
+            lista.appendChild(
+                item
+            );
+
+        }
+    );
+
+
+    document.getElementById(
+        "total"
+    ).textContent=
+        eleitores.length;
+
+
+    document.getElementById(
+        "disponiveis"
+    ).textContent=
+        disponiveis;
+
+
+    document.getElementById(
+        "utilizados"
+    ).textContent=
+        utilizados;
+
+}
+
+
+/* =========================
+COPIAR
+========================= */
+
+async function copiar(texto){
+
+    try{
+
+        await navigator.clipboard.writeText(
+            texto
+        );
+
+        alert(
+            "Código "+texto+" copiado!"
+        );
+
+    }catch(e){
+
+        const area=
+            document.createElement(
+                "textarea"
+            );
+
+        area.value=
+            texto;
+
+        document.body.appendChild(
+            area
+        );
+
+        area.select();
+
+        document.execCommand(
+            "copy"
+        );
+
+        area.remove();
+
+        alert(
+            "Código "+texto+" copiado!"
+        );
+
+    }
+
+}
+
+
+/* =========================
+COPIAR DISPONÍVEIS
+========================= */
+
+async function copiarDisponiveis(){
+
+    const eleitores=
+        lerEleitores();
+
+
+    const disponiveis=
+        eleitores
+            .filter(
+                eleitor=>!eleitor.votou
+            )
+            .map(
+                eleitor=>eleitor.id
+            );
+
+
+    if(
+        disponiveis.length===0
+    ){
+
+        alert(
+            "Não existem códigos disponíveis."
+        );
+
+        return;
+
+    }
+
+
+    const texto=
+        disponiveis.join("\n");
+
+
+    try{
+
+        await navigator.clipboard.writeText(
+            texto
+        );
+
+    }catch(e){
+
+        const area=
+            document.createElement(
+                "textarea"
+            );
+
+        area.value=
+            texto;
+
+        document.body.appendChild(
+            area
+        );
+
+        area.select();
+
+        document.execCommand(
+            "copy"
+        );
+
+        area.remove();
+
+    }
+
+
+    alert(
+        disponiveis.length+
+        " códigos disponíveis foram copiados."
+    );
+
+}
+
+
+/* =========================
+GERAR NOVOS
+========================= */
+
+function gerarNovos(){
+
+    const eleitores=
+        lerEleitores();
+
+
+    const algumUtilizado=
+        eleitores.some(
+            eleitor=>eleitor.votou
+        );
+
+
+    if(algumUtilizado){
+
+        alert(
+            "Não é possível gerar novos códigos depois que algum eleitor já tiver votado."
+        );
+
+        return;
+
+    }
+
+
+    const confirmar=
+        confirm(
+            "Isso substituirá os 400 códigos atuais. Deseja continuar?"
+        );
+
+
+    if(!confirmar){
+        return;
+    }
+
+
+    const novos=
+        gerarEleitores();
+
+
+    localStorage.setItem(
+        CHAVE,
+        JSON.stringify(
+            novos
+        )
+    );
+
+
+    mostrar(
+        novos
+    );
+
+
+    alert(
+        "400 novos códigos foram gerados."
+    );
+
+}
+
+
+/* =========================
+LER ELEITORES
+========================= */
+
+function lerEleitores(){
+
+    try{
+
+        const dados=
+            JSON.parse(
+                localStorage.getItem(
+                    CHAVE
+                )
+            );
+
+
+        if(
+            Array.isArray(dados)
+        ){
+
+            return dados;
+
+        }
+
+    }catch(e){}
+
+
+    const novos=
+        gerarEleitores();
+
+
+    localStorage.setItem(
+        CHAVE,
+        JSON.stringify(
+            novos
+        )
+    );
+
+
+    return novos;
+
+}
+
+
+/* =========================
+INICIAR
+========================= */
+
+carregar();
+
+</script>
+
+</body>
+</html>
